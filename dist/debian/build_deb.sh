@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-PRODUCT=scylla
+PRODUCT=scylla-enterprise
 
 . /etc/os-release
 print_usage() {
