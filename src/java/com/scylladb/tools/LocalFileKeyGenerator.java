@@ -12,11 +12,16 @@
 package com.scylladb.tools;
 
 import static java.lang.Integer.parseInt;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.util.EnumSet.of;
 import static javax.crypto.KeyGenerator.getInstance;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.Base64;
 
 import javax.crypto.KeyGenerator;
@@ -83,7 +88,7 @@ public class LocalFileKeyGenerator {
             if (!padd.endsWith("Padding")) {
                 padd = padd + "Padding";
             }
-            
+
             KeyGenerator generator = getInstance(alg);
             generator.init(len);
             SecretKey key = generator.generateKey();
@@ -104,6 +109,10 @@ public class LocalFileKeyGenerator {
                 }
                 if (f.isDirectory()) {
                     f = new File(f, keyName);
+                }
+
+                if (!f.exists()) {
+                    Files.createFile(f.toPath(), asFileAttribute(of(OWNER_READ, OWNER_WRITE)));
                 }
 
                 try (PrintWriter w = new PrintWriter(new FileWriter(f, append))) {

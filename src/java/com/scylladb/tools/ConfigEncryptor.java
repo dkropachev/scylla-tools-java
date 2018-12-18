@@ -14,6 +14,10 @@ package com.scylladb.tools;
 import static com.scylladb.tools.LocalFileKeyGenerator.getSystemKeyDir;
 import static java.lang.Boolean.valueOf;
 import static java.nio.file.Files.readAllBytes;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.util.EnumSet.of;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 
@@ -24,6 +28,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
@@ -186,10 +191,13 @@ public class ConfigEncryptor {
                 throw new ConfigurationException("Cannot read " + config);
             }
 
-            File output = new File(cmd.getOptionValue("output", config.getAbsolutePath()));
+            String outName = cmd.getOptionValue("output", null);
 
-            if (output.exists() && !output.canWrite()) {
-                throw new ConfigurationException("Cannot write " + output);
+            if (outName != null) {
+                File output = new File(outName);
+                if (output.exists() && !output.canWrite()) {
+                    throw new ConfigurationException("Cannot write " + output);
+                }
             }
 
             boolean decrypt = cmd.hasOption("decrypt");
@@ -331,10 +339,13 @@ public class ConfigEncryptor {
             }
 
             PrintStream out = System.out;
-            String outName = cmd.getOptionValue("output", null);
 
             if (outName != null) {
-                out = new PrintStream(new FileOutputStream(outName));
+                File f = new File(outName);
+                if (!f.exists()) {
+                    Files.createFile(f.toPath(), asFileAttribute(of(OWNER_READ, OWNER_WRITE)));
+                }
+                out = new PrintStream(new FileOutputStream(f));
             }
 
             out.println(buf.toString());
