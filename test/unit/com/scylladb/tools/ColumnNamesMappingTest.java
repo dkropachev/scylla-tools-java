@@ -1,40 +1,29 @@
 package com.scylladb.tools;
 
+import static com.scylladb.tools.BulkLoader.findFiles;
+import static com.scylladb.tools.BulkLoader.openFile;
+
 import java.io.File;
-import java.net.InetAddress;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.cassandra.config.CFMetaData;
 import org.apache.cassandra.db.DecoratedKey;
 import org.apache.cassandra.db.marshal.Int32Type;
-import org.apache.cassandra.dht.IPartitioner;
 import org.apache.cassandra.dht.Murmur3Partitioner;
-import org.apache.cassandra.dht.Range;
-import org.apache.cassandra.dht.Token;
+import org.apache.cassandra.io.sstable.Component;
+import org.apache.cassandra.io.sstable.Descriptor;
+import org.apache.cassandra.io.sstable.format.SSTableReader;
+import org.apache.cassandra.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class ColumnNamesMappingTest {
-
-    private static final int THREADS_COUNT = 1;
-
     private static class MockClient implements Client {
 
         private final Set<String> statements = new HashSet<>();
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public Client copy() {
-            throw new UnsupportedOperationException();
-        }
 
         @Override
         public CFMetaData getCFMetaData(String keyspace, String cfName) {
@@ -50,17 +39,7 @@ public class ColumnNamesMappingTest {
         }
 
         @Override
-        public Map<InetAddress, Collection<Range<Token>>> getEndpointRanges() {
-            return null;
-        }
-
-        @Override
-        public IPartitioner getPartitioner() {
-            return new Murmur3Partitioner();
-        }
-
-        @Override
-        public void processStatment(DecoratedKey key, long timestamp, String what, List<Object> objects) {
+        public void processStatment(DecoratedKey key, long timestamp, String what, Map<String, Object> objects) {
             statements.add(what);
         }
 
@@ -87,8 +66,16 @@ public class ColumnNamesMappingTest {
         mapping.put("val2", "new_val2");
 
         MockClient client = new MockClient();
-        SSTableToCQL ssTableToCQL = new SSTableToCQL(keyspace, client, new ColumnNamesMapping(mapping), THREADS_COUNT);
-        ssTableToCQL.stream(dir);
+        ColumnNamesMapping columnNamesMapping = new ColumnNamesMapping(mapping);
+        for (Pair<Descriptor, Set<Component>> p : findFiles(keyspace, dir)) {
+            SSTableReader r = openFile(p, columnNamesMapping.getMetadata(client.getCFMetaData(keyspace, p.left.cfname)));
+            if (r == null) {
+                continue;
+            }
+            SStableScannerSource src = new DefaultSSTableScannerSource(r, null);
+            SSTableToCQL ssTableToCQL = new SSTableToCQL(src, columnNamesMapping, false);
+            ssTableToCQL.run(client);
+        }
         client.assertStatements();
     }
 
