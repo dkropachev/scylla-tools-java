@@ -87,7 +87,7 @@ public class ConfigEncryptor {
     private static void printUsage(Options options) {
         String usage = String.format("%s [options] [key path]", TOOL_NAME);
         String header = System.lineSeparator()
-                + "Encrypt sensistive scylla configuration entries using system key at <key path>.";
+                + "Encrypt sensitive scylla configuration entries using system key at <key path>.";
         String footer = System.lineSeparator() + "(Requires Java cryptographic extensions)";
         new HelpFormatter().printHelp(usage, header, options, footer);
     }
