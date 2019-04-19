@@ -279,6 +279,7 @@ public class BulkLoader {
         private final Metadata metadata;
         private final KeyspaceMetadata keyspaceMetadata;
         private final IPartitioner partitioner;
+        private final IPartitioner clusterPartitioner;
         private final boolean simulate;
         private final Verbosity verbose;
         private BatchStatement batchStatement;
@@ -376,7 +377,9 @@ public class BulkLoader {
 
             loadUserTypes(keyspaceMetadata.getUserTypes(), keyspace);
 
-            partitioner = FBUtilities.newPartitioner(metadata.getPartitioner());
+            clusterPartitioner = FBUtilities.newPartitioner(metadata.getPartitioner());
+            partitioner = options.partitioner != null ? FBUtilities.newPartitioner(options.partitioner)
+                    : clusterPartitioner;
             if (options.throttle != 0) {
                 rateLimiter = RateLimiter.create(options.throttle * 1000 * 1000 / 8);
             }
@@ -399,6 +402,7 @@ public class BulkLoader {
             this.metadata = other.metadata;
             this.keyspaceMetadata = other.keyspaceMetadata;
             this.partitioner = other.partitioner;
+            this.clusterPartitioner = other.clusterPartitioner;
             this.rateLimiter = other.rateLimiter;
             this.batch = other.batch;
             this.preparedStatements = other.preparedStatements;
@@ -731,6 +735,9 @@ public class BulkLoader {
         }
 
         public Map<InetAddress, Collection<Range<Token>>> getEndpointRanges() {
+            if (getClusterPartitioner() != getPartitioner()) {
+                return null;
+            }
             HashMap<InetAddress, Collection<Range<Token>>> map = new HashMap<>();
             for (TokenRange range : metadata.getTokenRanges()) {
                 Range<Token> tr = new Range<Token>(getToken(range.getStart()), getToken(range.getEnd()));
@@ -753,9 +760,12 @@ public class BulkLoader {
         public IPartitioner getPartitioner() {
             return partitioner;
         }
+        public IPartitioner getClusterPartitioner() {
+            return clusterPartitioner;
+        }
 
         private Token getToken(com.datastax.driver.core.Token t) {
-            return getPartitioner().getTokenFactory().fromByteArray(t.serialize(PROTOCOL_VERSION));
+            return getClusterPartitioner().getTokenFactory().fromByteArray(t.serialize(PROTOCOL_VERSION));
         }
 
         @Override
@@ -990,6 +1000,8 @@ public class BulkLoader {
             options.addOption("cl", CONSISTENCY_LEVEL_OPTION, "consistency level (default: ONE)", "sets the consistency level for statements");
             options.addOption("tr", TOKEN_RANGES, "<lo>:<hi>,...", "import only partitions that satisfy lo < token(partition) <= hi");
 
+            options.addOption("pt", PARTITIONER_TYPE, "class", "Partitioner type to use, defaults to cluster value");
+
             return options;
         }
 
@@ -1193,6 +1205,7 @@ public class BulkLoader {
                     opts.ignoreDroppedCounterData = true;
                 }
 
+                opts.partitioner = cmd.getOptionValue(PARTITIONER_TYPE, null);
                 opts.tokenRanges = cmd.getOptionValue(TOKEN_RANGES, null);
 
                 return opts;
@@ -1248,6 +1261,8 @@ public class BulkLoader {
 
         public final Set<String> ignoreColumns = new HashSet<>();
 
+        public String partitioner;
+
         LoaderOptions(File directory) {
             this.directory = directory;
         }
@@ -1292,6 +1307,8 @@ public class BulkLoader {
 
     private static final String USE_UNSET = "use-unset";
     private static final String TOKEN_RANGES = "token-ranges";
+
+    private static final String PARTITIONER_TYPE = "partitioner";
 
     public static void main(String args[]) {
         DatabaseDescriptor.clientInitialization();
@@ -1390,6 +1407,7 @@ public class BulkLoader {
 
     private static Map<InetAddress, Collection<Range<Token>>> getRanges(LoaderOptions options, CQLClient client) {
         if (options.tokenRanges != null) {
+            // Reminder: this is in sstable token syntax, not cluster
             TokenFactory f = client.getPartitioner().getTokenFactory();
             List<Range<Token>> ranges = new ArrayList<>();
             for (String ts : options.tokenRanges.split(",")) {
