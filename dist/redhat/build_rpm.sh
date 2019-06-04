@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-PRODUCT=scylla-enterprise
+PRODUCT=$(cat SCYLLA-PRODUCT-FILE)
 
 . /etc/os-release
 print_usage() {
