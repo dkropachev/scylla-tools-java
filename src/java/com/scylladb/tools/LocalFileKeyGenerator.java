@@ -61,7 +61,7 @@ public class LocalFileKeyGenerator {
         options.addOption("m", "block-mode", true, "Algorithm block mode (i.e. CBC, EBC)");
         options.addOption("p", "padding", true, "Algorithm padding method (i.e. PKCS5)");
         options.addOption("l", "length", true, "Key length in bits (i.e. 128, 256)");
-        options.addOption("a", "append", true, "Append to key file (default is to overwrite)");
+        options.addOption("c", "append", false, "Append to key file (default is to overwrite)");
         options.addOption("h", "help", false, "print help");
 
         CommandLineParser parser = new GnuParser();
@@ -83,7 +83,7 @@ public class LocalFileKeyGenerator {
             String mode = cmd.getOptionValue("block-mode", "CBC").toUpperCase();
             String padd = cmd.getOptionValue("padding", "PKCS5").toUpperCase();
             int len = parseInt(cmd.getOptionValue("length", "128"));
-            boolean append = Boolean.parseBoolean(cmd.getOptionValue("append", "false"));
+            boolean append = cmd.hasOption("append");
 
             if (!padd.endsWith("Padding")) {
                 padd = padd + "Padding";
