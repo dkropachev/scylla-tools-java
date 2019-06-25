@@ -56,6 +56,8 @@ install -m755 bin/sstableloader $RPM_BUILD_ROOT%{_bindir}
 install -m755 bin/scylla-sstableloader $RPM_BUILD_ROOT%{_bindir}
 install -m755 bin/cqlsh $RPM_BUILD_ROOT%{_bindir}
 install -m755 bin/cqlsh.py $RPM_BUILD_ROOT%{_bindir}
+install -m755 bin/local_file_key_generator $RPM_BUILD_ROOT%{_bindir}
+install -m755 bin/configuration_encryptor $RPM_BUILD_ROOT%{_bindir}
 install -m755 tools/bin/filter_cassandra_attributes.py $RPM_BUILD_ROOT%{_bindir}
 install -m755 tools/bin/cassandra_attributes.py $RPM_BUILD_ROOT%{_bindir}
 install -m755 tools/bin/cassandra-stress $RPM_BUILD_ROOT%{_bindir}
@@ -85,6 +87,8 @@ ln -s %{_datadir}/scylla/cassandra/lib/apache-cassandra-%{version}-%{release}.ja
 %{_bindir}/sstablelevelreset
 %{_bindir}/sstablemetadata
 %{_bindir}/sstablerepairedset
+%{_bindir}/local_file_key_generator
+%{_bindir}/configuration_encryptor
 %{_prefix}/lib/python2.7/site-packages/cassandra_pylib-0.0.0-py2.7.egg-info
 %{_prefix}/lib/python2.7/site-packages/cqlshlib/*
 

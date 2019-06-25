@@ -4,6 +4,8 @@ bin/cqlsh usr/bin
 bin/cqlsh.py usr/bin
 bin/sstablescrub usr/bin
 bin/sstableupgrade usr/bin
+bin/local_file_key_generator usr/bin
+bin/configuration_encryptor usr/bin
 tools/bin/cassandra-stress usr/bin
 tools/bin/cassandra-stressd usr/bin
 tools/bin/sstabledump usr/bin
