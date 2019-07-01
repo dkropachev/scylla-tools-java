@@ -47,7 +47,7 @@ public class LocalFileKeyGenerator {
             "resources/system_keys");
 
     private static void printUsage(Options options) {
-        String usage = String.format("%s [options] [key path]", TOOL_NAME);
+        String usage = String.format("%s [options] [key path|key name]", TOOL_NAME);
         String header = System.lineSeparator()
                 + "Generate a local file (system) key at <key path> with the provided length and algorithm.";
         String footer = System.lineSeparator() + "(Requires Java cryptographic extensions)";
@@ -101,17 +101,13 @@ public class LocalFileKeyGenerator {
 
             if (files.length > 0) {
                 File f = new File(files[0]);
-                if (!f.exists() && !f.isDirectory()
-                        && (f.getParentFile() == null || !f.getParentFile().isDirectory())) {
-                    keyName = f.getName();
-                    // look up again, for testing
-                    f = new File(getSystemKeyDir());
-                }
                 if (f.isDirectory()) {
                     f = new File(f, keyName);
                 }
-
                 if (!f.exists()) {
+                    if (f.getParentFile() != null) {
+                        f.getParentFile().mkdirs();
+                    }
                     Files.createFile(f.toPath(), asFileAttribute(of(OWNER_READ, OWNER_WRITE)));
                 }
 
@@ -127,7 +123,7 @@ public class LocalFileKeyGenerator {
             printUsage(options);
             System.exit(1);
         } catch (Exception e) {
-            System.err.println(e.getMessage());
+            System.err.println(e);
             System.exit(1);
         }
     }
