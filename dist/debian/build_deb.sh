@@ -92,6 +92,20 @@ if [ -z "$TARGET" ]; then
     fi
 fi
 
+RELOC_PKG_FULLPATH=$(readlink -f $RELOC_PKG)
+RELOC_PKG_BASENAME=$(basename $RELOC_PKG)
+SCYLLA_VERSION=$(cat SCYLLA-VERSION-FILE | sed 's/\.rc/~rc/' | sed -e 's/_/-/g')
+SCYLLA_RELEASE=$(cat SCYLLA-RELEASE-FILE)
+
+ln -fv $RELOC_PKG_FULLPATH ../$PRODUCT-tools_$SCYLLA_VERSION-$SCYLLA_RELEASE.orig.tar.gz
+
+cp -a dist/debian/debian debian
+if [ "$PRODUCT" != "scylla" ]; then
+    for i in debian/scylla-*;do
+        mv $i ${i/scylla-/$PRODUCT-}
+    done
+fi
+
 RELOC_PKG=$(readlink -f $RELOC_PKG)
 
 mv scylla-tools/debian debian

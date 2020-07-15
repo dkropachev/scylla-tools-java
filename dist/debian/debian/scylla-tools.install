@@ -20,3 +20,7 @@ usr/bin/sstablelevelreset
 usr/bin/sstablemetadata
 usr/bin/sstablerepairedset
 opt/scylladb/share/cassandra/pylib/*
+opt/scylladb/share/cassandra/bin/local_file_key_generator
+opt/scylladb/share/cassandra/bin/configuration_encryptor
+usr/bin/local_file_key_generator
+usr/bin/configuration_encryptor

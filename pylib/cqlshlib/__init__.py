@@ -18,6 +18,7 @@ from cassandra.metadata import RegisteredTableExtension
 import io
 import struct
 
+
 # Add a handler for schema extensions to at least print 
 # the info when doing "desc <table>".
 #
@@ -68,7 +69,8 @@ class ScyllaTagsExt(RegisteredTableExtension):
         mer = MapExtensionReader(ext_blob)
         return "%s = %s" % (ext_key, mer.read_map())
 
-# Add a handler for scylla_encryption_options extension to at least print 
+
+# Add a handler for scylla_encryption_options extension to at least print
 # the info when doing "desc <table>".
 #
 # The end result will not be cut-and-paste usable; we'd need to modify the
